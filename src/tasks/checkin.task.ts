@@ -16,8 +16,6 @@ export const checkIn = async () => {
 
   await page.goto(URL);
 
-  await page.waitForSelector(FORM_CHECKOUT_SELECTOR, { timeout: 5000 });
-
   const formCheckOutVisible = await page
     .locator(FORM_CHECKOUT_SELECTOR)
     .isVisible()
@@ -29,7 +27,6 @@ export const checkIn = async () => {
       `Tài khoản đã được check-in rồi! Dừng chạy.\nXem ảnh chụp tại ${screenshotPath}`
     );
   } else {
-    await page.waitForSelector(CHECKIN_BTN_SELECTOR, { timeout: 5000 });
     await page.click(CHECKIN_BTN_SELECTOR);
 
     await page.waitForLoadState("networkidle");
