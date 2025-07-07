@@ -1,8 +1,12 @@
 import { launchBrowser } from "../core/browser";
 import { maybeLogin } from "../core/auth";
+import { Page } from "playwright";
+import { config } from "../config/config";
 
-const URL = "https://localhost:8080/admin/products";
-const BTN_SELECTOR = ".btn.btn-primary.btn-sm.rounded";
+const URL = `http://192.168.11.100:8080/ECS/timesheet/${config.USER_ID}`;
+const CHECKIN_BTN_SELECTOR =
+  "form[action='/ECS/timesheet/checkin'] input[type='submit']";
+const FORM_CHECKOUT_SELECTOR = "form[action='/ECS/timesheet/checkout']";
 
 export const checkIn = async () => {
   const { browser, page } = await launchBrowser();
@@ -11,11 +15,33 @@ export const checkIn = async () => {
   await maybeLogin(page);
 
   await page.goto(URL);
-  await page.waitForSelector(BTN_SELECTOR);
-  await page.click(BTN_SELECTOR);
 
-  await page.waitForLoadState("networkidle");
+  await page.waitForSelector(FORM_CHECKOUT_SELECTOR, { timeout: 5000 });
 
+  const formCheckOutVisible = await page
+    .locator(FORM_CHECKOUT_SELECTOR)
+    .isVisible()
+    .catch(() => false);
+
+  if (formCheckOutVisible) {
+    let screenshotPath = await screenPage(page);
+    console.log(
+      `Tài khoản đã được check-in rồi! Dừng chạy.\nXem ảnh chụp tại ${screenshotPath}`
+    );
+  } else {
+    await page.waitForSelector(CHECKIN_BTN_SELECTOR, { timeout: 5000 });
+    await page.click(CHECKIN_BTN_SELECTOR);
+
+    await page.waitForLoadState("networkidle");
+
+    let screenshotPath = await screenPage(page);
+    console.log(`Đã hoàn thành check-in!\nXem ảnh chụp tại ${screenshotPath}`);
+  }
+
+  await browser.close();
+};
+
+const screenPage = async (page: Page) => {
   let screenshotPath = `./storage/screenshot_${new Date()
     .toISOString()
     .replace(/[:.]/g, "-")}.png`;
@@ -24,7 +50,5 @@ export const checkIn = async () => {
     path: screenshotPath,
   });
 
-  await browser.close();
-
-  console.log(`Đã hoàn thành check-in! Xem ảnh chụp tại ${screenshotPath}`);
+  return screenshotPath;
 };
